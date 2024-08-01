@@ -28,6 +28,7 @@ const VenderEstoque: React.FC = () => {
   const [totalPagar, setTotalPagar] = useState<number>(0);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [metodoPagamento, setMetodoPagamento] = useState<string>('Dinheiro');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -96,6 +97,15 @@ const VenderEstoque: React.FC = () => {
           ));
         }
       }
+
+      // Registrar venda
+      await axios.post('http://localhost:3333/sales', {
+        itemId: vendaItems[0].id, // Ajuste se necessário para suportar múltiplos itens
+        item: vendaItems[0].item,
+        quantidade: vendaItems.reduce((sum, item) => sum + item.quantidade, 0),
+        preco: vendaItems.reduce((sum, item) => sum + (item.preco * item.quantidade), 0),
+        metodoPagamento
+      });
 
       setSuccessMessage('Venda realizada com sucesso!');
       setVendaItems([]);
@@ -217,6 +227,19 @@ const VenderEstoque: React.FC = () => {
           >
             Adicionar Item
           </button>
+          <label className="font-medium text-white">Método de Pagamento:</label>
+          <Select
+            value={{ label: metodoPagamento, value: metodoPagamento }}
+            onChange={option => setMetodoPagamento(option?.value || 'Dinheiro')}
+            options={[
+              { value: 'Dinheiro', label: 'Dinheiro' },
+              { value: 'Cartão de Crédito', label: 'Cartão de Crédito' },
+              { value: 'Cartão de Débito', label: 'Cartão de Débito' },
+              { value: 'PIX', label: 'PIX' }
+            ]}
+            placeholder="Selecione um método de pagamento"
+            styles={customStyles}
+          />
           <div className="mb-5">
             <h2 className="text-2xl font-medium text-white">Itens a vender</h2>
             {vendaItems.length > 0 ? (
@@ -225,29 +248,32 @@ const VenderEstoque: React.FC = () => {
                   {vendaItems.map((item, index) => (
                     <li key={index}>
                       {item.item} - Quantidade: {item.quantidade} - Preço: {formatCurrency(item.preco * item.quantidade)}
+                      <button
+                        onClick={() => setVendaItems(vendaItems.filter((_, i) => i !== index))}
+                        className="ml-4 text-red-500"
+                      >
+                        <FiTrash2 size={20} />
+                      </button>
                     </li>
                   ))}
                 </ul>
-                <button
-                  onClick={handleClearItems}
-                  className="mt-2 text-red-500 flex items-center"
-                >
-                  <FiTrash2 size={18} className="mr-2" />
-                  
-                </button>
+                <p className="mt-4 text-lg font-medium text-white">Total a pagar: {formatCurrency(totalPagar)}</p>
               </div>
             ) : (
               <p className="text-white">Nenhum item adicionado.</p>
             )}
           </div>
-          <div className="text-white text-2xl p-2  font-bold">
-            <p>Total a Pagar: {formatCurrency(totalPagar)}</p>
-          </div>
           <button
             onClick={handleVenda}
-            className="w-full p-2 mb-5 bg-green-500 rounded font-medium"
+            className="w-full p-2 mb-5 bg-blue-500 rounded font-medium"
           >
-            Finalizar Venda
+            Confirmar Venda
+          </button>
+          <button
+            onClick={handleClearItems}
+            className="w-full p-2 mb-5 bg-red-500 rounded font-medium"
+          >
+            Limpar Itens
           </button>
         </div>
       </main>

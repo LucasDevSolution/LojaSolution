@@ -19,3 +19,16 @@ model Customer {
 
   @@map("customers")
 }
+
+model Sale {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  itemId       String   // ID do item vendido
+  item         String
+  quantidade   Int
+  preco        Int
+  metodoPagamento String // Pode ser Dinheiro, Cartão de Crédito, Cartão de Débito ou PIX
+  created_at   DateTime @default(now())
+  updated_at   DateTime @default(now())
+
+  @@map("sales")
+}
