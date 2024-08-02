@@ -1,31 +1,45 @@
 import prismaClient from "../prisma";
 
-interface CreateSaleProps {
+interface SaleItemProps {
   itemId: string;
-  item: string;
   quantidade: number;
-  precoc: number;
   precov: number;
-  precot: number;
+}
+
+interface CreateSaleProps {
+  customerId: string;
+  items: SaleItemProps[];
   metodoPagamento: string;
 }
 
 class CreateSaleService {
-  async execute({ itemId, item, quantidade, precoc, precov, precot, metodoPagamento }: CreateSaleProps) {
-    if (!itemId || !item || !quantidade || !precoc || !precov || !precot || !metodoPagamento) {
+  async execute({ customerId, items, metodoPagamento }: CreateSaleProps) {
+    if (!customerId || items.length === 0 || !metodoPagamento) {
       throw new Error("Preencha todos os campos");
     }
     
+    const totalQuantidade = items.reduce((sum, item) => sum + item.quantidade, 0);
+    const totalPrecov = items.reduce((sum, item) => sum + item.precov * item.quantidade, 0);
+    const precot = totalPrecov; // Aqui assumo que o precot é o totalPrecov
+
     const sale = await prismaClient.sale.create({
       data: {
-        itemId,
-        item,
-        quantidade,
-        precoc,
-        precov,
+        customerId,
+        totalQuantity: totalQuantidade,
+        totalPrecov,
         precot,
-        metodoPagamento
-      }
+        metodoPagamento,
+        items: {
+          create: items.map(item => ({
+            itemId: item.itemId,
+            quantidade: item.quantidade,
+            precov: item.precov,
+          })),
+        },
+      },
+      include: {
+        items: true,
+      },
     });
     
     return sale;

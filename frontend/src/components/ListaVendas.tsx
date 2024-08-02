@@ -5,23 +5,16 @@ import { FiArrowLeft } from 'react-icons/fi';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import moment from 'moment';
-import qrCodeImage from '../My_PDF.png';
-
-interface VendaItem {
-  itemId: string;
-  quantidade: number;
-  precov: number;
-  item: string;
-}
+import qrCodeImage from '../image/My_PDF.png'; // Certifique-se de que o caminho para o QR code está correto
 
 interface Venda {
   id: string;
-  totalQuantity: number;
-  totalPrecov: number;
-  precot: number;
+  itemId: string;
+  item: string;
+  quantidade: number;
+  precov: number;
   metodoPagamento: string;
   created_at: string;
-  items: VendaItem[];
 }
 
 const VisualizarVendas: React.FC = () => {
@@ -70,7 +63,7 @@ const VisualizarVendas: React.FC = () => {
     const currentDate = moment().format('DD/MM/YYYY');
     const currentTime = moment().format('HH:mm:ss');
 
-    doc.setFontSize(8);
+    doc.setFontSize(8); // Definindo um tamanho de fonte menor
     doc.text('SOLUTION LEVANDO SOLUÇAO', 3, 10);
     doc.text('Av. Niemeyer Qd. 157 Lt 24 74943-700', 3, 15);
     doc.text('Aparecida De Goiânia,Garavelo - GO', 3, 20);
@@ -84,24 +77,20 @@ const VisualizarVendas: React.FC = () => {
     doc.text('  COMPROVANTE DE PAGAMENTO', 3, 49);
     doc.text('-----------------------------------------------------------', 0, 51);
 
-    let currentY = 56;
-    venda.items.forEach((item, index) => {
-      doc.text(
-        `${index + 1} ${item.item} ${item.quantidade}UN ${formatCurrency(item.precov)} ${formatCurrency(item.precov * item.quantidade)}`,
-        0, currentY
-      );
-      currentY += 5;
-    });
+    doc.text(
+      `1 ${venda.item}${venda.quantidade}UN${formatCurrency(venda.precov)}${formatCurrency(venda.precov * venda.quantidade)}`,
+      0, 56
+    );
+    doc.text('-----------------------------------------------------------', 0, 100);
+    doc.text(`Método de Pagamento: ${venda.metodoPagamento}`, 0, 93);
+    doc.text(`Total Pago: ${formatCurrency(venda.precov * venda.quantidade)}`, 0, 98);
 
-    doc.text('-----------------------------------------------------------', 0, currentY);
-    currentY += 5;
-    doc.text(`Método de Pagamento: ${venda.metodoPagamento}`, 0, currentY);
-    currentY += 5;
-    doc.text(`Total Pago: ${formatCurrency(venda.totalPrecov)}`, 0, currentY);
 
-    doc.addImage(qrCodeImage, 'PNG', 13, currentY + 10, 30, 30);
+    doc.addImage(qrCodeImage, 'PNG', 13, 165, 30, 30);
 
     doc.save('recibo.pdf');
+
+    setShowReciboModal(false);
   };
 
   const handleReciboClick = (venda: Venda) => {
@@ -124,18 +113,18 @@ const VisualizarVendas: React.FC = () => {
         </div>
       )}
       {showReciboModal && (
-        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center">
-          <div className="bg-gray-700 p-6 rounded shadow-lg">
-            <h2 className="text-xl text-white text-center font-medium mb-4">Recibo</h2>
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center">
+          <div className="bg-white p-6 rounded shadow-lg">
+            <h2 className="text-xl font-medium mb-4">Recibo</h2>
             <button
               onClick={confirmRecibo}
-              className="w-full p-2 mb-5 bg-green-500 rounded text-black font-medium "
+              className="w-full p-2 mb-5 bg-green-500 rounded font-medium"
             >
               Baixar Recibo
             </button>
             <button
               onClick={() => setShowReciboModal(false)}
-              className="w-full p-2 bg-gray-500 rounded text-black  font-medium"
+              className="w-full p-2 bg-gray-500 rounded font-medium"
             >
               Fechar
             </button>
@@ -154,42 +143,46 @@ const VisualizarVendas: React.FC = () => {
         <table className="w-full bg-gray-800 text-white border-collapse">
           <thead>
             <tr>
-              <th className="px-4 py-2 border-b border-gray-600 text-center">ID da Compra</th>
-              <th className="px-4 py-2 border-b border-gray-600 text-center">Qtd.Itens Vendidos</th>
-              <th className="px-4 py-2 border-b border-gray-600 text-center">Preço Pago</th>
-              <th className="px-4 py-2 border-b border-gray-600 text-center">Forma De Pagamento</th>
-              <th className="px-4 py-2 border-b border-gray-600 text-center">Hora da Compra</th>
-              <th className="px-4 py-2 border-b border-gray-600 text-center">Data da Compra</th>
-              <th className="px-4 py-2 border-b border-gray-600 text-center">Recibo</th>
+              <th className="px-4 py-2 border-b border-gray-600 text-left">Item</th>
+              <th className="px-4 py-2 border-b border-gray-600 text-left">Quantidade</th>
+              <th className="px-4 py-2 border-b border-gray-600 text-left">Preço</th>
+              <th className="px-4 py-2 border-b border-gray-600 text-left">Método de Pagamento</th>
+              <th className="px-4 py-2 border-b border-gray-600 text-left">Data da Venda</th>
+              <th className="px-4 py-2 border-b border-gray-600 text-left">Recibo</th>
             </tr>
           </thead>
           <tbody>
             {vendas.length > 0 ? (
-              vendas.map(venda => (
-                <tr key={venda.id}>
-                  <td className="px-4 py-2 border-b border-gray-700 text-center">{venda.id}</td>
-                  <td className="px-4 py-2 border-b border-gray-700 text-center">{venda.totalQuantity}</td>
-                  <td className="px-4 py-2 border-b border-gray-700 text-center">{formatCurrency(venda.totalPrecov)}</td>
-                  <td className="px-4 py-2 border-b border-gray-700 text-center">{venda.metodoPagamento}</td>
-                  <td className="px-4 py-2 border-b border-gray-700 text-center">
-                    {new Date(venda.created_at).toLocaleTimeString('pt-BR')}
-                  </td>
-                  <td className="px-4 py-2 border-b border-gray-700 text-center">
-                    {new Date(venda.created_at).toLocaleDateString('pt-BR')}
-                  </td>
-                  <td className="px-4 py-2 border-b border-gray-700 text-center ">
-                    <button
-                      onClick={() => handleReciboClick(venda)}
-                      className="bg-green-500 text-black font-bold px-2 py-1 rounded"
-                    >
-                      Recibo
-                    </button>
-                  </td>
-                </tr>
-              ))
+              vendas.map(venda => {
+                const quantidade = Number(venda.quantidade);
+                const precov = Number(venda.precov);
+                const precoTotal = quantidade * precov;
+
+                return (
+                  <tr key={venda.id}>
+                    <td className="px-4 py-2 border-b border-gray-700">{venda.item}</td>
+                    <td className="px-4 py-2 border-b border-gray-700">{quantidade}</td>
+                    <td className="px-4 py-2 border-b border-gray-700">
+                      {Number.isNaN(precoTotal) ? 'R$ 0,00' : formatCurrency(precoTotal)}
+                    </td>
+                    <td className="px-4 py-2 border-b border-gray-700">{venda.metodoPagamento}</td>
+                    <td className="px-4 py-2 border-b border-gray-700">
+                      {new Date(venda.created_at).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-4 py-2 border-b border-gray-700">
+                      <button
+                        onClick={() => handleReciboClick(venda)}
+                        className="bg-blue-500 text-white px-2 py-1 rounded"
+                      >
+                        Recibo
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
-                <td colSpan={7} className="px-4 py-2 text-center border-b border-gray-700">
+                <td colSpan={6} className="px-4 py-2 text-center border-b border-gray-700">
                   Nenhuma venda registrada.
                 </td>
               </tr>

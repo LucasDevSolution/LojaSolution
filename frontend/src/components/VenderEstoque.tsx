@@ -6,7 +6,7 @@ import Select from 'react-select';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import moment from 'moment';
-import qrCodeImage from '../My_PDF.png';
+import qrCodeImage from '../image/My_PDF.png';
 
 interface Customer {
   id: string;
@@ -18,7 +18,7 @@ interface Customer {
 }
 
 interface VendaItem {
-  itemId: string;
+  id: string;
   item: string;
   quantidade: number;
   precoc: number;
@@ -62,7 +62,7 @@ const VenderEstoque: React.FC = () => {
       if (customer && venderQuantidade <= customer.quantidade) {
         setVendaItems(prevItems => [
           ...prevItems,
-          { itemId: customer.id, item: customer.item, quantidade: venderQuantidade, precoc: customer.precoc, precov: customer.precov }
+          { id: customer.id, item: customer.item, quantidade: venderQuantidade, precoc: customer.precoc, precov: customer.precov }
         ]);
         setSelectedCustomer(null);
         setVenderQuantidade(0);
@@ -91,14 +91,8 @@ const VenderEstoque: React.FC = () => {
 
     setLoading(true);
     try {
-      await axios.post('http://localhost:3333/sales', {
-        customerId: vendaItems[0].itemId, // Utilizando o primeiro item como exemplo
-        items: vendaItems,
-        metodoPagamento
-      });
-
       for (const vendaItem of vendaItems) {
-        const customer = customers.find(c => c.id === vendaItem.itemId);
+        const customer = customers.find(c => c.id === vendaItem.id);
         if (customer) {
           const updatedQuantidade = customer.quantidade - vendaItem.quantidade;
           await axios.put(`http://localhost:3333/customers/${customer.id}`, {
@@ -109,6 +103,16 @@ const VenderEstoque: React.FC = () => {
           setCustomers(customers.map(c =>
             c.id === customer.id ? { ...c, quantidade: updatedQuantidade } : c
           ));
+
+          await axios.post('http://localhost:3333/sales', {
+            itemId: vendaItem.id,
+            item: vendaItem.item,
+            quantidade: vendaItem.quantidade,
+            precoc: vendaItem.precoc,
+            precov: vendaItem.precov,
+            precot: vendaItem.precov * vendaItem.quantidade,
+            metodoPagamento
+          });
         }
       }
 
@@ -246,16 +250,16 @@ const VenderEstoque: React.FC = () => {
       {showReciboModal && (
         <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-gray-700 p-6 rounded shadow-lg relative z-50">
-            <h2 className="text-xl font-medium text-white text-center mb-4">Recibo</h2>
+            <h2 className="text-xl font-medium text-white mb-4">Recibo</h2>
             <button
               onClick={gerarReciboPDF}
-              className="w-full p-2 mb-5 bg-green-500 rounded font-medium text-black"
+              className="w-full p-2 mb-5 bg-green-500 rounded font-medium text-white"
             >
               Baixar Recibo
             </button>
             <button
               onClick={() => { setShowReciboModal(false); resetFields(); }}
-              className="w-full p-2 bg-gray-500 rounded font-medium text-black"
+              className="w-full p-2 bg-gray-500 rounded font-medium text-white"
             >
               Fechar
             </button>
