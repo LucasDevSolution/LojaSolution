@@ -12,8 +12,8 @@ model Customer {
   item String
   quantidade Int
   fornecedor String
-  precoc Int
-  precov Int
+  precoc Float
+  precov Float
   created_at DateTime? @default(now())
   updated_at DateTime? @updatedAt
 
@@ -22,11 +22,12 @@ model Customer {
 
 model Sale {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  itemId       String   // ID do item vendido
-  item         String
+  itemId       String   
   quantidade   Int
-  preco        Int
-  metodoPagamento String // Pode ser Dinheiro, Cartão de Crédito, Cartão de Débito ou PIX
+  precoc       Float
+  precov       Float
+  precot       Float
+  metodoPagamento String 
   created_at   DateTime @default(now())
   updated_at   DateTime @default(now())
 

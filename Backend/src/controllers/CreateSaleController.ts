@@ -3,17 +3,19 @@ import { CreateSaleService } from '../services/CreateSaleService';
 
 class CreateSaleController {
   async handle(request: FastifyRequest, reply: FastifyReply) {
-    const { itemId, item, quantidade, preco, metodoPagamento } = request.body as {
+    const { itemId, item, quantidade, precoc, precov, metodoPagamento } = request.body as {
       itemId: string;
       item: string;
       quantidade: number;
-      preco: number;
+      precoc: number;
+      precov: number;
       metodoPagamento: string;
     };
 
     const createSaleService = new CreateSaleService();
     try {
-      const sale = await createSaleService.execute({ itemId, item, quantidade, preco, metodoPagamento });
+      const precot = quantidade * precov;
+      const sale = await createSaleService.execute({ itemId, item, quantidade, precoc, precov, precot, metodoPagamento });
       reply.send(sale);
     } catch (error) {
       reply.status(500).send({ error: 'Erro ao criar venda.' });

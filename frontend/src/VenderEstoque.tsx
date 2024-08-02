@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { FiArrowLeft, FiTrash2 } from 'react-icons/fi'; // Importa o ícone de lixeira
+import { FiArrowLeft, FiTrash2 } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Select from 'react-select';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import moment from 'moment';
+import qrCodeImage from '../My_PDF.png';
 
 interface Customer {
   id: string;
@@ -17,7 +21,8 @@ interface VendaItem {
   id: string;
   item: string;
   quantidade: number;
-  preco: number;
+  precoc: number;
+  precov: number;
 }
 
 const VenderEstoque: React.FC = () => {
@@ -29,6 +34,8 @@ const VenderEstoque: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [metodoPagamento, setMetodoPagamento] = useState<string>('Dinheiro');
+  const [showReciboModal, setShowReciboModal] = useState<boolean>(false);
+  const [, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,7 +52,7 @@ const VenderEstoque: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const total = vendaItems.reduce((sum, item) => sum + item.preco * item.quantidade, 0);
+    const total = vendaItems.reduce((sum, item) => sum + item.precov * item.quantidade, 0);
     setTotalPagar(total);
   }, [vendaItems]);
 
@@ -55,7 +62,7 @@ const VenderEstoque: React.FC = () => {
       if (customer && venderQuantidade <= customer.quantidade) {
         setVendaItems(prevItems => [
           ...prevItems,
-          { id: customer.id, item: customer.item, quantidade: venderQuantidade, preco: customer.precov }
+          { id: customer.id, item: customer.item, quantidade: venderQuantidade, precoc: customer.precoc, precov: customer.precov }
         ]);
         setSelectedCustomer(null);
         setVenderQuantidade(0);
@@ -82,6 +89,7 @@ const VenderEstoque: React.FC = () => {
       return;
     }
 
+    setLoading(true);
     try {
       for (const vendaItem of vendaItems) {
         const customer = customers.find(c => c.id === vendaItem.id);
@@ -95,40 +103,86 @@ const VenderEstoque: React.FC = () => {
           setCustomers(customers.map(c =>
             c.id === customer.id ? { ...c, quantidade: updatedQuantidade } : c
           ));
+
+          await axios.post('http://localhost:3333/sales', {
+            itemId: vendaItem.id,
+            item: vendaItem.item,
+            quantidade: vendaItem.quantidade,
+            precoc: vendaItem.precoc,
+            precov: vendaItem.precov,
+            precot: vendaItem.precov * vendaItem.quantidade,
+            metodoPagamento
+          });
         }
       }
 
-      // Registrar venda
-      await axios.post('http://localhost:3333/sales', {
-        itemId: vendaItems[0].id, // Ajuste se necessário para suportar múltiplos itens
-        item: vendaItems[0].item,
-        quantidade: vendaItems.reduce((sum, item) => sum + item.quantidade, 0),
-        preco: vendaItems.reduce((sum, item) => sum + (item.preco * item.quantidade), 0),
-        metodoPagamento
-      });
-
+      setLoading(false);
       setSuccessMessage('Venda realizada com sucesso!');
-      setVendaItems([]);
-      setTotalPagar(0);
       setTimeout(() => {
         setSuccessMessage(null);
-      }, 3000);
+        setShowReciboModal(true);
+      }, 500); // Exibir o modal após 500 ms
     } catch (error) {
       console.error('Erro ao vender item:', error);
       setErrorMessage('Erro ao vender item.');
       setTimeout(() => {
         setErrorMessage(null);
       }, 3000);
+      setLoading(false);
     }
+  };
+
+  const resetFields = () => {
+    setSelectedCustomer(null);
+    setVenderQuantidade(0);
+    setVendaItems([]);
+    setTotalPagar(0);
+  };
+
+  const gerarReciboPDF = () => {
+    const doc = new jsPDF({
+      unit: 'mm',
+      format: [55, 200]
+    });
+
+    const currentDate = moment().format('DD/MM/YYYY');
+    const currentTime = moment().format('HH:mm:ss');
+
+    doc.setFontSize(8); // Definindo um tamanho de fonte menor
+    doc.text('SOLUTION LEVANDO SOLUÇAO', 5, 10);
+    doc.text('Av. Niemeyer Qd. 157 Lt 24 74943-700', 5, 15);
+    doc.text('Aparecida De Goiânia,Garavelo - GO', 5, 20);
+    doc.text('CNPJ: 46.293.911/0001-55', 5, 25);
+    doc.text('(62) 3222-6069 (62) 98529-6795', 5, 30);
+    doc.text('slevandosolucao@gmail.com', 5, 35);
+    doc.text('@solutionprestadoradeservico', 5, 40);
+
+    doc.text(`${currentDate} ${currentTime}`, 5, 44);
+    doc.text('-----------------------------------------------------------', 0, 46);
+    doc.text('  COMPROVANTE DE PAGAMENTO', 3, 49);
+    doc.text('-----------------------------------------------------------', 0, 51);
+
+    vendaItems.forEach((item, index) => {
+      doc.text(
+        `${index + 1} ${item.item} ${item.quantidade}UN ${formatCurrency(item.precov)} ${formatCurrency(item.precov * item.quantidade)}`,
+        0, 56 + (index * 5)
+      );
+    });
+
+    doc.text('-----------------------------------------------------------', 0, 100);
+    doc.text(`Método de Pagamento: ${metodoPagamento}`, 5, 93);
+    doc.text(`Total Pago: ${formatCurrency(totalPagar)}`, 5, 98);
+
+    doc.addImage(qrCodeImage, 'PNG', 13, 100, 30, 30);
+
+    doc.save('recibo.pdf');
+
+    setShowReciboModal(false);
+    resetFields();
   };
 
   const handleBack = () => {
     navigate('/dashboard');
-  };
-
-  const handleClearItems = () => {
-    setVendaItems([]);
-    setTotalPagar(0);
   };
 
   const formatOptions = (customers: Customer[]) => {
@@ -193,15 +247,34 @@ const VenderEstoque: React.FC = () => {
           {errorMessage}
         </div>
       )}
+      {showReciboModal && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-gray-700 p-6 rounded shadow-lg relative z-50">
+            <h2 className="text-xl font-medium text-white mb-4">Recibo</h2>
+            <button
+              onClick={gerarReciboPDF}
+              className="w-full p-2 mb-5 bg-green-500 rounded font-medium text-white"
+            >
+              Baixar Recibo
+            </button>
+            <button
+              onClick={() => { setShowReciboModal(false); resetFields(); }}
+              className="w-full p-2 bg-gray-500 rounded font-medium text-white"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
       <button
         onClick={handleBack}
-        className="absolute top-4 left-4 bg-gray-800 text-white p-2 rounded-full shadow-md flex items-center justify-center"
+        className="absolute top-1 left-4 bg-gray-800 text-white p-0 rounded-full shadow-md flex items-center justify-center"
         title="Voltar"
       >
         <FiArrowLeft size={24} />
       </button>
       <main className="my-10 w-full md:max-w-2xl">
-        <h1 className="text-4xl font-medium text-white">Vender Estoque</h1>
+        <h1 className="text-4xl font-medium text-white">Vender</h1>
         <div className="flex flex-col my-6">
           <label className="font-medium text-white">Selecione o item:</label>
           <Select
@@ -247,7 +320,7 @@ const VenderEstoque: React.FC = () => {
                 <ul className="list-disc list-inside text-white">
                   {vendaItems.map((item, index) => (
                     <li key={index}>
-                      {item.item} - Quantidade: {item.quantidade} - Preço: {formatCurrency(item.preco * item.quantidade)}
+                      {item.item} - Quantidade: {item.quantidade} - Preço: {formatCurrency(item.precov * item.quantidade)}
                       <button
                         onClick={() => setVendaItems(vendaItems.filter((_, i) => i !== index))}
                         className="ml-4 text-red-500"
@@ -265,15 +338,9 @@ const VenderEstoque: React.FC = () => {
           </div>
           <button
             onClick={handleVenda}
-            className="w-full p-2 mb-5 bg-blue-500 rounded font-medium"
+            className="w-full p-2 mb-5 bg-green-500 rounded font-medium"
           >
             Confirmar Venda
-          </button>
-          <button
-            onClick={handleClearItems}
-            className="w-full p-2 mb-5 bg-red-500 rounded font-medium"
-          >
-            Limpar Itens
           </button>
         </div>
       </main>

@@ -4,13 +4,15 @@ interface CreateSaleProps {
   itemId: string;
   item: string;
   quantidade: number;
-  preco: number;
+  precoc: number;
+  precov: number;
+  precot: number;
   metodoPagamento: string;
 }
 
 class CreateSaleService {
-  async execute({ itemId, item, quantidade, preco, metodoPagamento }: CreateSaleProps) {
-    if (!itemId || !item || !quantidade || !preco || !metodoPagamento) {
+  async execute({ itemId, item, quantidade, precoc, precov, precot, metodoPagamento }: CreateSaleProps) {
+    if (!itemId || !item || !quantidade || !precoc || !precov || !precot || !metodoPagamento) {
       throw new Error("Preencha todos os campos");
     }
     
@@ -19,7 +21,9 @@ class CreateSaleService {
         itemId,
         item,
         quantidade,
-        preco,
+        precoc,
+        precov,
+        precot,
         metodoPagamento
       }
     });

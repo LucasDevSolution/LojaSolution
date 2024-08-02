@@ -113,7 +113,7 @@ const EditarEstoque: React.FC = () => {
     <div className="w-full min-h-screen bg-gray-900 flex justify-center px-4 relative">
       <button
         onClick={handleBack}
-        className="absolute top-4 left-4 bg-gray-800 text-white p-2 rounded-full shadow-md flex items-center justify-center"
+        className="absolute top-1 left-4 bg-gray-800 text-white p-0 rounded-full shadow-md flex items-center justify-center"
         title="Voltar"
       >
         <FiArrowLeft size={24} />

@@ -6,6 +6,7 @@ import VisualizarEstoque from './VisualizarEstoque';
 import EditarEstoque from './EditarEstoque';
 import VenderEstoque from '../src/VenderEstoque';
 import Caixa from './Caixa';
+import VisualizarVendas from './VisualizarVendas';
 
 const App: React.FC = () => {
   return (
@@ -25,6 +26,7 @@ const App: React.FC = () => {
         <Route path="/caixa" element={<VenderEstoque/>} />
          {/* Adicione outras rotas aqui conforme necessário */}
          <Route path="/saldo" element={<Caixa/>} />
+         <Route path="/visualizar-vendas" element={<VisualizarVendas/>} />
       </Routes>
     </Router>
   );

@@ -141,7 +141,7 @@ export default function App() {
       )}
       <button
         onClick={handleBack}
-        className="absolute top-4 left-4 bg-gray-800 text-white p-2 rounded-full shadow-md flex items-center justify-center"
+        className="absolute top-1 left-4 bg-gray-800 text-white p-0 rounded-full shadow-md flex items-center justify-center"
         title="Voltar"
       >
         <FiArrowLeft size={24} />
